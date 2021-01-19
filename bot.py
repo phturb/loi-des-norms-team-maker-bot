@@ -4,6 +4,7 @@ import os
 import discord
 import random
 import json
+import matplotlib.pyplot as plt
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -26,6 +27,48 @@ except:
     pass
 
 
+def generate_stat_plot():
+    with open('stats.json') as json_file:
+        stats = json.load(json_file)
+        player_stats = {}
+
+        for game_id in stats.keys():
+            for player in stats[game_id]["players"]:
+                if player in player_stats:
+                    player_stats[player]["total_rerolls"] += stats[game_id]["number_of_rerolls"]
+                    player_stats[player]["total_game"] += 1
+                    player_stats[player]["max_rerolls"] = max(player_stats[player]["max_rerolls"], stats[game_id]["number_of_rerolls"])
+                else:
+                    player_stats[player] = {}
+                    player_stats[player]["total_game"] = 1
+                    player_stats[player]["total_rerolls"] = stats[game_id]["number_of_rerolls"]
+                    player_stats[player]["max_rerolls"] = stats[game_id]["number_of_rerolls"]
+        player_names = list(player_stats.keys())
+        player_rerolls = []
+        player_games = []
+        player_average = []
+        player_max = []
+        for name in player_names:
+            player_rerolls.append(player_stats[name]["total_rerolls"])
+            player_games.append(player_stats[name]["total_game"])
+            player_average.append(player_stats[name]["total_rerolls"] * 1.0 / player_stats[name]["total_game"])
+            player_max.append(player_stats[name]["max_rerolls"])
+        plt.title("Total rerolls")
+        plt.bar(player_names,player_rerolls)
+        plt.savefig("stats_total.png")
+        plt.close()
+        plt.title("Total games")
+        plt.bar(player_names,player_games)
+        plt.savefig("stats_games.png")
+        plt.close()
+        plt.title("Average rerolls")
+        plt.bar(player_names,player_average)
+        plt.savefig("stats_average.png")
+        plt.close()
+        plt.title("Longest rerolls")
+        plt.bar(player_names,player_max)
+        plt.savefig("stats_max.png")
+        plt.close()
 
 @client.event
 async def on_ready():
@@ -38,12 +81,30 @@ async def on_message(message):
         return
 
     if message.content == '/loi-stats':
-        mes = await message.channel.send(content=json.dumps(stats))
+        print("{} called stats".format(message.author))
+        try:
+            generate_stat_plot()
+        except:
+            await message.channel.send(content="Stats are non existants")
+            return
+        await message.channel.send(file=discord.File("stats_total.png"))
+        await message.channel.send(file=discord.File("stats_games.png"))
+        await message.channel.send(file=discord.File("stats_average.png"))
+        await message.channel.send(file=discord.File("stats_max.png"))
         return
 
     if message.content == '/loi-rules':
         print("{} called rules".format(message.author))
-        content = "Règlement d'une loi :\n"
+        content = ("Règlement d'une loi :\n"
+                    "\t- Une loi se termine seulement lors d'une victoire (victoire n'inclus pas un remake)\n"
+                    "\t- Il n'est pas possible de quitter un loi\n"
+                    "\t- Invade obligatoire\n"
+                    "\t- Les rôles sont choisi avant une queue et aucun swap est accepté"
+                    "\t- Le Jungle doit avoir smite, le Support doit acheter l'item support \n"
+                    "\t- FF = ban à vie des lois\n"
+                    "\t- Le personnage doit être choisis à l'aide du bouton aléatoire du client, aucun reroll accepté\n"
+                    "\t- Le metton est l'un des calls les plus respecté\n"
+                    "\t- Avec un accord des 5 membres une pause collation/souper/meditation/hydratation peut être prise, mais la loi doit se reprendre immédiatement après")
         mes = await message.channel.send(content=content)
         return
 
@@ -67,6 +128,8 @@ async def on_reaction_add(reaction, user):
     if reaction.emoji not in allowed_emoji:
         await reaction.remove(user)
         return
+
+    print("{} reacted {} at game id {}".format(user, reaction.emoji, reaction.message.id ))
 
     if reaction.emoji == START_EMOJI:
         
