@@ -53,22 +53,22 @@ def generate_stat_plot():
             player_games.append(player_stats[name]["total_game"])
             player_average.append(player_stats[name]["total_rerolls"] * 1.0 / player_stats[name]["total_game"])
             player_max.append(player_stats[name]["max_rerolls"])
-        plt.title("Total rerolls")
-        plt.bar(player_names,player_rerolls)
-        plt.savefig("stats_total.png")
-        plt.close()
-        plt.title("Total games")
-        plt.bar(player_names,player_games)
-        plt.savefig("stats_games.png")
-        plt.close()
-        plt.title("Average rerolls")
-        plt.bar(player_names,player_average)
-        plt.savefig("stats_average.png")
-        plt.close()
-        plt.title("Longest rerolls")
-        plt.bar(player_names,player_max)
-        plt.savefig("stats_max.png")
-        plt.close()
+
+        fig, axs = plt.subplots(2, 2)
+        axs[0, 0].set_title("Total rerolls")
+        axs[0, 0].bar(player_names,player_rerolls)
+
+        axs[0, 1].set_title("Total games")
+        axs[0, 1].bar(player_names,player_games)
+
+        axs[1, 0].set_title("Average rerolls")
+        axs[1, 0].bar(player_names,player_average)
+
+        axs[1, 1].set_title("Longest rerolls")
+        axs[1, 1].bar(player_names,player_max)
+        fig.tight_layout()
+        fig.savefig("stats.png")
+
 
 @client.event
 async def on_ready():
@@ -84,13 +84,11 @@ async def on_message(message):
         print("{} called stats".format(message.author))
         try:
             generate_stat_plot()
-        except:
+        except Exception as e:
+            print(e)
             await message.channel.send(content="Stats are non existants")
             return
-        await message.channel.send(file=discord.File("stats_total.png"))
-        await message.channel.send(file=discord.File("stats_games.png"))
-        await message.channel.send(file=discord.File("stats_average.png"))
-        await message.channel.send(file=discord.File("stats_max.png"))
+        await message.channel.send(file=discord.File("stats.png"))
         return
 
     if message.content == '/loi-rules':
