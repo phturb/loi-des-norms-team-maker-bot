@@ -16,8 +16,11 @@ client = discord.Client()
 
 PARTICIPANT_EMOJI = '👍'
 START_EMOJI = '✅'
+LOCK_EMOJI = '🔒'
 
-allowed_emoji = [PARTICIPANT_EMOJI, START_EMOJI]
+STATS_IMAGE_NAME = "stats.png"
+
+allowed_emoji = [PARTICIPANT_EMOJI, START_EMOJI, LOCK_EMOJI]
 
 stats = {}
 try:
@@ -67,7 +70,8 @@ def generate_stat_plot():
         axs[1, 1].set_title("Longest rerolls")
         axs[1, 1].bar(player_names,player_max)
         fig.tight_layout()
-        fig.savefig("stats.png")
+        fig.savefig(STATS_IMAGE_NAME)
+        return discord.File(STATS_IMAGE_NAME)
 
 
 @client.event
@@ -83,12 +87,12 @@ async def on_message(message):
     if message.content == '/loi-stats':
         print("{} called stats".format(message.author))
         try:
-            generate_stat_plot()
+            discord_file = generate_stat_plot()
         except Exception as e:
             print(e)
             await message.channel.send(content="Stats are non existants")
             return
-        await message.channel.send(file=discord.File("stats.png"))
+        await message.channel.send(file=discord_file)
         return
 
     if message.content == '/loi-rules':
@@ -129,7 +133,14 @@ async def on_reaction_add(reaction, user):
 
     print("{} reacted {} at game id {}".format(user, reaction.emoji, reaction.message.id ))
 
-    if reaction.emoji == START_EMOJI:
+    lock_reactions =list(filter(lambda x: x.emoji == LOCK_EMOJI , reaction.message.reactions))[0]
+
+    if reaction.emoji != LOCK_EMOJI and lock_reactions.count > 1:
+        print("game id {} is locked".format( reaction.message.id ))
+        await reaction.remove(user)
+        return
+
+    if reaction.emoji == START_EMOJI and lock_reactions.count < 2:
         
         
         reroll_field = list(filter(lambda x: x.name == "Nombre de parties",  reaction.message.embeds[0].fields))
