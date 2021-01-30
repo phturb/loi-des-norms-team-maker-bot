@@ -57,18 +57,24 @@ def generate_stat_plot():
             player_average.append(player_stats[name]["total_rerolls"] * 1.0 / player_stats[name]["total_game"])
             player_max.append(player_stats[name]["max_rerolls"])
 
+        rotation = 45
+
         fig, axs = plt.subplots(2, 2)
         axs[0, 0].set_title("Total rerolls")
         axs[0, 0].bar(player_names,player_rerolls)
+        axs[0, 0].tick_params(labelrotation=45)
 
         axs[0, 1].set_title("Total games")
         axs[0, 1].bar(player_names,player_games)
+        axs[0, 1].tick_params(labelrotation=45)
 
         axs[1, 0].set_title("Average rerolls")
         axs[1, 0].bar(player_names,player_average)
+        axs[1, 0].tick_params(labelrotation=45)
 
         axs[1, 1].set_title("Longest rerolls")
         axs[1, 1].bar(player_names,player_max)
+        axs[1, 1].tick_params(labelrotation=45)
         fig.tight_layout()
         fig.savefig(STATS_IMAGE_NAME)
         return discord.File(STATS_IMAGE_NAME)
